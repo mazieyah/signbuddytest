@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="color-scheme" content="light">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SignBuddy User Evaluation</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+/* ------------------------------------------------------------------
+   SETUP: paste your Google Apps Script web-app URL below.
+   Leave it empty to keep responses on this device only
+   (download them later from the researcher panel as CSV).
+------------------------------------------------------------------- */
+:root{
+  --ink:#102A2E; --ink-soft:#4A6468; --paper:#F6FAFA; --card:#FFFFFF;
+  --line:#CFDDDF; --teal:#1B6F6A; --teal-soft:#E3F0EF; --gold:#F2B134; --gold-ink:#3A2A00;
+  --error:#B3261E; --radius-s:6px; --radius-l:14px;
+  color-scheme:light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--paper);color:var(--ink);
+  font-family:"Atkinson Hyperlegible",Verdana,"Segoe UI",sans-serif;font-size:17px;line-height:1.5}
+.wrap{max-width:720px;margin:0 auto;padding:24px 20px 96px}
+header.top{position:sticky;top:0;z-index:5;background:var(--paper);border-bottom:1px solid var(--line)}
+header.top .bar{max-width:720px;margin:0 auto;padding:12px 20px;display:flex;align-items:center;gap:16px}
+.brand{font-weight:700;font-size:18px;letter-spacing:-.01em}
+.brand small{display:block;font-weight:400;font-size:13px;color:var(--ink-soft)}
+.progress{flex:1;display:flex;gap:4px}
+.progress i{flex:1;height:6px;border-radius:3px;background:var(--line)}
+.progress i.done{background:var(--teal)}
+.progress i.now{background:var(--gold)}
+.lang{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:var(--radius-s);
+  padding:6px 10px;font:inherit;font-size:14px;cursor:pointer}
+h1{font-size:34px;line-height:1.15;margin:8px 0 6px;letter-spacing:-.02em}
+.step-count{color:var(--ink-soft);font-size:15px;margin:0}
+.lead{color:var(--ink-soft);margin:0 0 24px;max-width:62ch}
+.bm{display:block;color:var(--ink-soft);font-style:italic;font-size:.9em}
+body.en-only .bm{display:none}
+fieldset{border:0;margin:0 0 22px;padding:0}
+legend,.q{font-weight:700;margin-bottom:8px;padding:0}
+.opts{display:flex;flex-wrap:wrap;gap:8px}
+.chip{position:relative}
+.chip input{position:absolute;opacity:0;width:1px;height:1px}
+.chip span{display:inline-block;border:1.5px solid var(--line);background:var(--card);border-radius:999px;
+  padding:8px 14px;cursor:pointer;font-size:15px}
+.chip input:checked+span{background:var(--teal);border-color:var(--teal);color:#fff}
+.chip input:focus-visible+span{outline:3px solid var(--gold);outline-offset:2px}
+input[type=text],textarea,select{width:100%;font:inherit;color:var(--ink);background:var(--card);
+  border:1.5px solid var(--line);border-radius:var(--radius-s);padding:10px 12px}
+textarea{min-height:96px;resize:vertical}
+input:focus-visible,textarea:focus-visible,select:focus-visible{outline:3px solid var(--gold);outline-offset:1px}
+.scale-key{position:sticky;top:61px;z-index:4;background:var(--paper);padding:10px 0;margin-bottom:6px;
+  display:grid;grid-template-columns:repeat(5,1fr);gap:6px;font-size:13px;color:var(--ink-soft);text-align:center;
+  border-bottom:1px dashed var(--line)}
+.scale-key b{display:block;color:var(--ink);font-size:16px}
+.likert{background:var(--card);border:1px solid var(--line);border-radius:var(--radius-l);padding:16px;margin-bottom:12px}
+.likert.missing{border-color:var(--error);box-shadow:0 0 0 1px var(--error)}
+.likert .stmt{margin:0 0 12px}
+.likert .num{color:var(--teal);font-weight:700;margin-right:6px}
+.likert .row{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.likert label{position:relative;display:block}
+.likert input{position:absolute;opacity:0;width:1px;height:1px}
+.likert label span{display:flex;align-items:center;justify-content:center;height:46px;border-radius:var(--radius-s);
+  border:1.5px solid var(--line);font-weight:700;font-size:18px;cursor:pointer;background:var(--paper)}
+.likert input:checked+span{background:var(--gold);border-color:var(--gold);color:var(--gold-ink)}
+.likert input:focus-visible+span{outline:3px solid var(--teal);outline-offset:2px}
+.signs{display:flex;flex-wrap:wrap;gap:6px}
+.signs .chip span{min-width:44px;text-align:center;padding:8px 10px}
+table.test{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:var(--radius-l);overflow:hidden}
+.test th,.test td{padding:10px 12px;border-bottom:1px solid var(--line);text-align:left;font-size:15px}
+.test th{background:var(--teal-soft);font-size:14px}
+.test td.sign{font-weight:700;font-size:20px;width:56px}
+.test select{padding:6px 8px}
+.test tr.missing td{background:color-mix(in srgb,var(--error) 10%,transparent)}
+.tablewrap{overflow-x:auto;margin-bottom:12px}
+.note{background:var(--teal-soft);border-radius:var(--radius-l);padding:14px 16px;font-size:15px;margin:0 0 20px}
+.err{color:var(--error);font-weight:700;margin:12px 0 0;min-height:1.5em}
+.nav{position:fixed;left:0;right:0;bottom:0;background:var(--paper);border-top:1px solid var(--line);
+  padding:12px 20px calc(12px + env(safe-area-inset-bottom,0px))}
+.nav .in{max-width:720px;margin:0 auto;display:flex;gap:12px;justify-content:space-between}
+button.btn{font:inherit;font-weight:700;border-radius:var(--radius-s);padding:12px 20px;cursor:pointer;border:1.5px solid var(--teal)}
+button.primary{background:var(--teal);color:#fff}
+button.ghost{background:transparent;color:var(--teal)}
+button.btn:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+button[hidden]{display:none}
+.done-mark{font-size:64px;line-height:1;margin:24px 0 8px}
+.admin{margin-top:40px;border-top:1px solid var(--line);padding-top:20px;font-size:15px;color:var(--ink-soft)}
+.admin button{margin:6px 8px 0 0}
+@media (max-width:520px){
+  h1{font-size:28px}
+  .scale-key{font-size:11px}
+  .likert{padding:12px}
+  .brand small{display:none}
+}
+@media (prefers-reduced-motion:no-preference){
+  .step{animation:in .25s ease-out}
+  @keyframes in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+}
+</style>
+</head>
+<body>
+<header class="top"><div class="bar">
+  <div class="brand">SignBuddy<small>User evaluation</small></div>
+  <div class="progress" id="progress" aria-hidden="true"></div>
+  <button class="lang" id="langBtn" type="button" aria-pressed="false">EN + BM</button>
+</div></header>
+
+<main class="wrap"><div id="app"></div></main>
+
+<nav class="nav"><div class="in">
+  <button class="btn ghost" id="backBtn" type="button">Back</button>
+  <button class="btn primary" id="nextBtn" type="button">Next</button>
+</div></nav>
+
+<script>
+/* ===== CONFIG ===== */
+const SCRIPT_URL = "";   // e.g. "https://script.google.com/macros/s/AKfy.../exec"
+const STORE_KEY = "signbuddy_uat_responses";
+/* Researcher mode: open the page with ?researcher at the end of the link.
+   Only that link shows the recognition test and the researcher tools. */
+const RESEARCHER = new URLSearchParams(location.search).has("researcher");
+
+/* ===== CONTENT ===== */
+const SIGNS = [["A","Static, easy"],["B","Static, easy"],["5","Static, easy"],["M","Similar shape"],["N","Similar shape"],
+  ["S","Similar shape"],["T","Similar shape"],["J","Moving"],["Z","Moving"],["15","Moving"]];
+const TAM = [
+ ["PEOU1","Learning to use SignBuddy is easy for me.","Belajar menggunakan SignBuddy adalah mudah bagi saya."],
+ ["PEOU2","My interaction with SignBuddy is clear and understandable.","Interaksi saya dengan SignBuddy jelas dan mudah difahami."],
+ ["PEOU3","It is easy to get SignBuddy to recognise my signs.","Mudah untuk membuatkan SignBuddy mengecam isyarat saya."],
+ ["PEOU4","Overall, I find SignBuddy easy to use.","Secara keseluruhan, SignBuddy mudah digunakan."],
+ ["PU1","Using SignBuddy improves my ability to learn BIM signs.","Menggunakan SignBuddy meningkatkan keupayaan saya mempelajari isyarat BIM."],
+ ["PU2","SignBuddy helps me remember BIM signs better than charts or videos.","SignBuddy membantu saya mengingati isyarat BIM lebih baik daripada carta atau video."],
+ ["PU3","SignBuddy makes it easier to practise BIM on my own.","SignBuddy memudahkan saya berlatih BIM sendiri."],
+ ["PU4","Overall, I find SignBuddy useful for learning BIM.","Secara keseluruhan, SignBuddy berguna untuk mempelajari BIM."],
+ ["PE1","I find playing SignBuddy enjoyable.","Saya menikmati bermain SignBuddy."],
+ ["PE2","Playing SignBuddy is fun.","Bermain SignBuddy menyeronokkan."],
+ ["PE3","Playing SignBuddy is pleasant.","Bermain SignBuddy memberi pengalaman yang menyenangkan."],
+ ["OQ1","SignBuddy recognises my signs accurately.","SignBuddy mengecam isyarat saya dengan tepat."],
+ ["OQ2","The feedback SignBuddy gives on my signs is of high quality.","Maklum balas SignBuddy terhadap isyarat saya berkualiti tinggi."],
+ ["OQ3","The reference signs in the Library are clear.","Isyarat rujukan dalam Library adalah jelas."],
+ ["RD1","The detection readout clearly shows me which sign was recognised.","Paparan pengesanan jelas menunjukkan isyarat yang dikenal pasti."],
+ ["RD2","When my sign is wrong, I can tell how to correct it.","Apabila isyarat saya salah, saya tahu cara membetulkannya."],
+ ["RD3","The summary screen clearly shows my progress.","Skrin ringkasan jelas menunjukkan kemajuan saya."],
+ ["BI1","I intend to use SignBuddy again to learn BIM.","Saya berhasrat menggunakan SignBuddy lagi untuk belajar BIM."],
+ ["BI2","I would recommend SignBuddy to others.","Saya akan mengesyorkan SignBuddy kepada orang lain."],
+ ["BI3","I would use SignBuddy if more BIM vocabulary were added.","Saya akan menggunakan SignBuddy jika lebih banyak perbendaharaan kata BIM ditambah."]];
+const GD = [
+ ["GD1","The three-phase timer is easy to understand.","Pemasa tiga fasa mudah difahami."],
+ ["GD2","The scoring feels fair even when I make mistakes.","Pemarkahan terasa adil walaupun saya melakukan kesilapan."],
+ ["GD3","Because marks are never deducted, I kept trying until I got the sign right.","Kerana markah tidak pernah ditolak, saya terus mencuba sehingga isyarat saya betul."],
+ ["GD4","The Easy, Medium and Hard progression is appropriate.","Peringkat Easy, Medium dan Hard adalah bersesuaian."],
+ ["GD5","The game loads at an acceptable speed.","Permainan dimuatkan pada kelajuan yang memuaskan."]];
+const EX = [
+ ["EX1","The Library signs correctly represent standard BIM.","Isyarat dalam Library mewakili BIM standard dengan betul."],
+ ["EX2","SignBuddy accepts signs that I form correctly.","SignBuddy menerima isyarat yang saya bentuk dengan betul."],
+ ["EX3","SignBuddy rejects signs that are formed incorrectly.","SignBuddy menolak isyarat yang dibentuk dengan salah."],
+ ["EX4","SignBuddy is suitable for teaching BIM to beginners.","SignBuddy sesuai untuk mengajar BIM kepada pemula."]];
+const SCALE = [["Strongly disagree","Sangat tidak setuju"],["Disagree","Tidak setuju"],["Neutral","Neutral"],["Agree","Setuju"],["Strongly agree","Sangat setuju"]];
+const PROFILE = [
+ ["A1","Age group","Kumpulan umur",[["Below 18","Bawah 18"],["18–24"],["25–34"],["35–44"],["45 and above","45 ke atas"]]],
+ ["A2","Occupation","Pekerjaan",[["Student","Pelajar"],["Working adult","Bekerja"],["Educator","Pendidik"],["Other","Lain-lain"]]],
+ ["A3","Do you have prior knowledge of sign language?","Adakah anda mempunyai pengetahuan asas bahasa isyarat?",[["Yes","Ya"],["No","Tidak"]]],
+ ["A4","How would you describe your sign language level?","Bagaimanakah tahap bahasa isyarat anda?",[["Beginner","Pemula"],["Intermediate","Pertengahan"],["Fluent","Fasih"],["Deaf or native signer","Pekak atau pengguna asli bahasa isyarat"]]],
+ ["A5","Which browser did you use?","Pelayar web yang digunakan",[["Chrome"],["Edge"],["Firefox"],["Other","Lain-lain"]]],
+ ["A6","Which device did you use?","Peranti yang digunakan",[["Laptop","Komputer riba"],["Desktop","Komputer meja"]]],
+ ["A7","How much of SignBuddy did you complete?","Sejauh mana anda melengkapkan SignBuddy?",[["Level 1 (Alphabet) only","Tahap 1 (Abjad) sahaja"],["Level 2 (Numbers) only","Tahap 2 (Nombor) sahaja"],["Both levels, some modes","Kedua-dua tahap, sebahagian mod"],["Both levels, all modes","Kedua-dua tahap, semua mod"]]]];
+const ALL_SIGNS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").concat(Array.from({length:20},(_,i)=>String(i+1)));
+
+/* Column order matches the Data sheet in the analysis workbook */
+const COLUMNS = ["ID","Group","A1","A2","A3","A4","A5","A6","A7",
+  ...TAM.map(x=>x[0]),...GD.map(x=>x[0]),...EX.map(x=>x[0]),
+  ...SIGNS.map((_,i)=>"T"+(i+1)),...SIGNS.map((_,i)=>"P"+(i+1)),
+  "E1","E2","E3","EX5","EX6","Consent","Mode","Timestamp"];
+
+/* ===== STATE ===== */
+let S = fresh();
+function fresh(code){ return {ID:code||"",Consent:""}; }
+let step = 0;
+
+const STEPS = [
+ {id:"researcher", title:["Recognition test","Ujian pengecaman"], when:()=>RESEARCHER},
+ {id:"consent",    title:["Before you start","Sebelum anda mula"]},
+ {id:"A",          title:["About you","Tentang anda"]},
+ {id:"B",          title:["Using SignBuddy","Menggunakan SignBuddy"]},
+ {id:"C",          title:["Game design","Reka bentuk permainan"]},
+ {id:"D",          title:["Sign language check","Semakan bahasa isyarat"], when:()=>S.A3==="Yes"},
+ {id:"E",          title:["Your comments","Komen anda"]},
+ {id:"done",       title:["Thank you","Terima kasih"]}];
+const visible = () => STEPS.filter(s=>!s.when || s.when());
+
+/* ===== HELPERS ===== */
+const esc = t => String(t).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const bi = (en,bm) => esc(en) + (bm && bm!==en ? `<span class="bm">${esc(bm)}</span>` : "");
+function chips(name, opts, multi){
+  return `<div class="opts">${opts.map(([en,bm])=>{
+    const checked = multi ? (S[name]||[]).includes(en) : S[name]===en;
+    return `<label class="chip"><input type="${multi?"checkbox":"radio"}" name="${name}" value="${esc(en)}" ${checked?"checked":""}><span>${bi(en,bm)}</span></label>`;
+  }).join("")}</div>`;
+}
+function likertBlock(list, start){
+  const key = `<div class="scale-key" aria-hidden="true">${SCALE.map(([en,bm],i)=>`<div><b>${i+1}</b>${esc(en)}${document.body.classList.contains("en-only")||bm===en?"":`<br>${esc(bm)}`}</div>`).join("")}</div>`;
+  return key + list.map(([code,en,bm],i)=>`
+    <div class="likert" id="blk-${code}" role="radiogroup" aria-labelledby="lbl-${code}">
+      <p class="stmt" id="lbl-${code}"><span class="num">${start+i}.</span>${bi(en,bm)}</p>
+      <div class="row">${[1,2,3,4,5].map(v=>`<label><input type="radio" name="${code}" value="${v}" ${S[code]==v?"checked":""} aria-label="${v} – ${SCALE[v-1][0]}"><span>${v}</span></label>`).join("")}</div>
+    </div>`).join("");
+}
+
+/* ===== RENDER ===== */
+const app = document.getElementById("app");
+function render(keep){
+  const vs = visible(); const cur = vs[step];
+  document.getElementById("progress").innerHTML = vs.slice(0,-1).map((s,i)=>`<i class="${i<step?"done":i===step?"now":""}"></i>`).join("");
+  const head = `<p class="step-count">${cur.id==="done"?"":`Step ${step+1} of ${vs.length-1}`}</p><h1>${esc(cur.title[0])}</h1>${document.body.classList.contains("en-only")?"":`<p class="bm" style="margin:-4px 0 16px">${esc(cur.title[1])}</p>`}`;
+  let body = "";
+  if(cur.id==="researcher"){
+    body = `<p class="lead">For the researcher. Enter the respondent code, then ask them to perform each sign once in the practice screen and record the result. Hand the device over when this page is complete.</p>
+      <fieldset><label class="q" for="ID">Respondent code</label><input type="text" id="ID" name="ID" value="${esc(S.ID)}" placeholder="e.g. R01" autocomplete="off"></fieldset>
+      <div class="tablewrap"><table class="test"><thead><tr><th>Sign</th><th>Type</th><th>Detected?</th><th>Timer phase</th></tr></thead><tbody>
+      ${SIGNS.map(([s,t],i)=>{const n=i+1;return `<tr id="row-T${n}"><td class="sign">${s}</td><td>${t}</td>
+        <td><select name="T${n}" aria-label="Sign ${s} detected"><option value="">–</option><option value="1" ${S["T"+n]==="1"?"selected":""}>Yes</option><option value="0" ${S["T"+n]==="0"?"selected":""}>No</option></select></td>
+        <td><select name="P${n}" aria-label="Sign ${s} timer phase" ${S["T"+n]==="1"?"":"disabled"}><option value="">–</option>${[1,2,3].map(p=>`<option ${S["P"+n]==String(p)?"selected":""}>${p}</option>`).join("")}</select></td></tr>`}).join("")}
+      </tbody></table></div>
+      <div class="admin"><strong>Researcher tools</strong>
+        <p id="lastStatus" style="margin:6px 0"></p>
+        <p id="countLine" style="margin:6px 0"></p>
+        <button class="btn ghost" type="button" data-dl="workbook">Full data for workbook</button>
+        <button class="btn ghost" type="button" data-dl="questionnaire">Questionnaire</button>
+        <button class="btn ghost" type="button" data-dl="test">Recognition test</button>
+        <button class="btn ghost" type="button" data-dl="expert">Expert sign flags</button>
+        <button class="btn ghost" type="button" data-dl="comments">Comments</button>
+        <br><button class="btn ghost" type="button" id="clearBtn" style="margin-top:14px">Clear saved responses</button>
+      </div>`;
+  }
+  if(cur.id==="consent"){
+    body = (!SCRIPT_URL && !RESEARCHER ? `<div class="note" style="border:2px solid var(--error)">This form is not connected to a Google Sheet yet, so answers will not reach the researcher. Set SCRIPT_URL before sharing the link.</div>` : "") + `<p class="lead">${bi("Thank you for trying SignBuddy. This questionnaire takes about 10 minutes.","Terima kasih kerana mencuba SignBuddy. Soal selidik ini mengambil masa kira-kira 10 minit.")}</p>
+      <div class="note">${bi("Taking part is voluntary and you may stop at any time. Your answers are anonymous and used only for research. The webcam feed is processed in your browser and is never recorded.","Penyertaan adalah secara sukarela dan anda boleh berhenti pada bila-bila masa. Jawapan anda tanpa nama dan hanya digunakan untuk penyelidikan. Imej kamera web diproses dalam pelayar anda dan tidak dirakam.")}</div>
+      <fieldset><label class="chip"><input type="checkbox" name="Consent" value="Yes" ${S.Consent==="Yes"?"checked":""}><span>${bi("I agree to take part in this study","Saya bersetuju untuk menyertai kajian ini")}</span></label></fieldset>`;
+  }
+  if(cur.id==="A"){
+    body = PROFILE.filter(p=>p[0]!=="A4"||S.A3==="Yes").map(([code,en,bm,opts])=>
+      `<fieldset id="blk-${code}"><legend>${bi(en,bm)}</legend>${chips(code,opts)}</fieldset>`).join("");
+  }
+  if(cur.id==="B") body = `<p class="lead">${bi("Choose how much you agree with each statement.","Pilih tahap persetujuan anda bagi setiap kenyataan.")}</p>`+likertBlock(TAM,1);
+  if(cur.id==="C") body = likertBlock(GD,21);
+  if(cur.id==="D"){
+    body = `<p class="lead">${bi("Because you know sign language, your view on accuracy is especially valuable.","Kerana anda mengetahui bahasa isyarat, pandangan anda tentang ketepatan amat bernilai.")}</p>`
+      + likertBlock(EX,26)
+      + `<fieldset style="margin-top:24px"><legend>${bi("Which signs did the system struggle to recognise? Tick all that apply.","Isyarat manakah yang sukar dikenal pasti oleh sistem? Tandakan semua yang berkaitan.")}</legend>
+         <div class="signs">${ALL_SIGNS.map(s=>`<label class="chip"><input type="checkbox" name="EX5" value="${s}" ${(S.EX5||[]).includes(s)?"checked":""}><span>${s}</span></label>`).join("")}</div></fieldset>
+         <fieldset><label class="q" for="EX6">${bi("Were any Library signs different from the BIM you know? Which ones, and how?","Adakah mana-mana isyarat dalam Library berbeza daripada BIM yang anda ketahui? Yang mana dan bagaimana?")}</label>
+         <textarea id="EX6" name="EX6">${esc(S.EX6||"")}</textarea></fieldset>`;
+  }
+  if(cur.id==="E"){
+    body = [["E1","What did you like most about SignBuddy?","Apakah yang paling anda suka tentang SignBuddy?"],
+            ["E2","What difficulties did you face while using it?","Apakah kesukaran yang anda hadapi semasa menggunakannya?"],
+            ["E3","What BIM content or features would you like added?","Kandungan BIM atau ciri apakah yang anda mahu ditambah?"]]
+      .map(([c,en,bm])=>`<fieldset><label class="q" for="${c}">${bi(en,bm)}</label><textarea id="${c}" name="${c}">${esc(S[c]||"")}</textarea></fieldset>`).join("");
+  }
+  if(cur.id==="done"){
+    body = `<div class="done-mark" aria-hidden="true">🤟</div>
+      <p class="lead">${(RESEARCHER ? bi("Your response has been saved. Please hand the device back to the researcher.","Jawapan anda telah disimpan. Sila serahkan peranti kepada penyelidik.")
+        : bi("Your response has been submitted. You can close this page now.","Jawapan anda telah dihantar. Anda boleh menutup halaman ini sekarang."))}</p>
+`;
+  }
+  app.innerHTML = `<section class="step">${head}${body}<p class="err" id="err" role="alert"></p></section>`;
+  wire(cur);
+  const back = document.getElementById("backBtn"), next = document.getElementById("nextBtn");
+  back.hidden = step===0 || (RESEARCHER && step===1) || cur.id==="done";
+  next.hidden = cur.id==="done" && !RESEARCHER;
+  next.textContent = cur.id==="done" ? "Start next respondent" : (vs[step+1] && vs[step+1].id==="done" ? "Submit" : cur.id==="researcher" ? "Hand to respondent" : "Next");
+  if(cur.id==="researcher") researcherPanel();
+  if(!keep){ window.scrollTo(0,0);
+    app.querySelector("h1").setAttribute("tabindex","-1"); app.querySelector("h1").focus({preventScroll:true}); }
+}
+
+function wire(cur){
+  app.querySelectorAll("input,select,textarea").forEach(el=>{
+    el.addEventListener(el.tagName==="TEXTAREA"||el.type==="text"?"input":"change",()=>{
+      const n = el.name;
+      if(el.type==="checkbox" && n==="EX5"){
+        S.EX5 = [...app.querySelectorAll('input[name="EX5"]:checked')].map(x=>x.value);
+      } else if(el.type==="checkbox"){
+        S[n] = el.checked ? el.value : "";
+      } else S[n] = el.value;
+      if(/^T\d+$/.test(n)){
+        const p = app.querySelector(`select[name="P${n.slice(1)}"]`);
+        p.disabled = el.value!=="1"; if(p.disabled){p.value="";S["P"+n.slice(1)]="";}
+      }
+      if(n==="A3"){ if(S.A3!=="Yes"){ S.A4=""; } const y=window.scrollY; render(true); window.scrollTo(0,y); }
+      const blk = document.getElementById("blk-"+n); if(blk) blk.classList.remove("missing");
+      const row = document.getElementById("row-"+n); if(row) row.classList.remove("missing");
+    });
+  });
+}
+
+/* ===== VALIDATION ===== */
+function validate(cur){
+  const miss = [];
+  const need = codes => codes.forEach(c=>{ if(!S[c]) miss.push(c); });
+  if(cur.id==="researcher"){
+    if(!S.ID || !S.ID.trim()) miss.push("ID");
+    SIGNS.forEach((_,i)=>{const n=i+1; if(!S["T"+n] || (S["T"+n]==="1" && !S["P"+n])) miss.push("T"+n);});
+  }
+  if(cur.id==="consent" && S.Consent!=="Yes") miss.push("Consent");
+  if(cur.id==="A") need(PROFILE.map(p=>p[0]).filter(c=>c!=="A4"||S.A3==="Yes"));
+  if(cur.id==="B") need(TAM.map(x=>x[0]));
+  if(cur.id==="C") need(GD.map(x=>x[0]));
+  if(cur.id==="D") need(EX.map(x=>x[0]));
+  miss.forEach(c=>{ const b=document.getElementById("blk-"+c); if(b) b.classList.add("missing");
+                    const r=document.getElementById("row-"+c); if(r) r.classList.add("missing"); });
+  const err = document.getElementById("err");
+  if(miss.length){
+    const msg = {researcher:"Enter the respondent code and a result for every sign. Detected signs also need a timer phase.",
+      consent:"Tick the consent box to continue. | Tandakan kotak persetujuan untuk meneruskan.",
+      A:`Answer every question to continue (${miss.length} left). | Jawab semua soalan untuk meneruskan.`}[cur.id]
+      || `Choose an answer for every statement (${miss.length} left). | Pilih jawapan bagi setiap kenyataan.`;
+    err.textContent = msg;
+    const first = document.getElementById("blk-"+miss[0]) || document.getElementById("row-"+miss[0]) || document.getElementById(miss[0]);
+    if(first) first.scrollIntoView({behavior:"smooth",block:"center"});
+    return false;
+  }
+  err.textContent = ""; return true;
+}
+
+/* ===== SAVE & SEND ===== */
+function toRow(){
+  const r = {...S};
+  r.Group = S.A3==="Yes" ? "Sign language" : "Public";
+  r.Mode = RESEARCHER ? "Researcher session" : "Online";
+  if(!r.ID) r.ID = "W-" + Date.now().toString(36).toUpperCase();
+  r.EX5 = (S.EX5||[]).join(";");
+  r.Timestamp = new Date().toISOString();
+  const out = {}; COLUMNS.forEach(c=>out[c] = r[c]==null ? "" : r[c]);
+  return out;
+}
+function loadAll(){ try{ return JSON.parse(localStorage.getItem(STORE_KEY)||"[]"); }catch(e){ return []; } }
+function saveAll(a){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(a)); return true; }catch(e){ return false; } }
+let lastRow = null;
+async function submit(){
+  lastRow = toRow();
+  const all = loadAll(); all.push(lastRow); saveAll(all);
+  if(!SCRIPT_URL){ lastRow._status = "local"; return; }
+  try{
+    await fetch(SCRIPT_URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(lastRow)});
+    lastRow._status = "sent";
+  }catch(e){ lastRow._status = "failed"; }
+}
+function researcherPanel(){
+  const st = document.getElementById("lastStatus");
+  st.textContent = !lastRow ? "" : lastRow._status==="sent" ? `Last response (${lastRow.ID}) sent to the Google Sheet and backed up on this device.`
+    : lastRow._status==="failed" ? `Last response (${lastRow.ID}) could not reach the Google Sheet. It is saved on this device; download the files before clearing.`
+    : `Last response (${lastRow.ID}) saved on this device.`;
+  document.getElementById("countLine").textContent = `${loadAll().length} response(s) saved on this device.`;
+  app.querySelectorAll("[data-dl]").forEach(b=>b.onclick=()=>exportFile(b.dataset.dl));
+  document.getElementById("clearBtn").onclick = ()=>{
+    if(confirm("Delete all responses saved on this device? Download the files first if you need them.")){ saveAll([]); researcherPanel(); }
+  };
+}
+const ITEM_COLS = [...TAM.map(x=>x[0]),...GD.map(x=>x[0]),...EX.map(x=>x[0])];
+const T_COLS = SIGNS.map((_,i)=>"T"+(i+1)), P_COLS = SIGNS.map((_,i)=>"P"+(i+1));
+const EXPORTS = {
+  workbook: {name:"full_data", note:"Same columns as the Data sheet of the analysis workbook",
+    cols:["ID","Group","A1","A2","A3","A4","A5","A6","A7",...ITEM_COLS,...T_COLS,...P_COLS,"E1","E2","E3"]},
+  questionnaire: {name:"questionnaire", cols:["ID","Group","A1","A2","A3","A4","A5","A6","A7",...ITEM_COLS,"Consent","Timestamp"]},
+  test: {name:"recognition_test", cols:["ID","Group",...T_COLS,...P_COLS,"Total detected"],
+    map:r=>({...r,"Total detected":T_COLS.reduce((n,c)=>n+(r[c]==="1"||r[c]===1?1:0),0)})},
+  expert: {name:"expert_sign_flags", cols:["ID",...ALL_SIGNS,"EX6"], filter:r=>r.Group==="Sign language",
+    map:r=>{const f=String(r.EX5||"").split(";"); const o={ID:r.ID,EX6:r.EX6}; ALL_SIGNS.forEach(sg=>o[sg]=f.includes(sg)?1:""); return o;}},
+  comments: {name:"comments", cols:["ID","Group","Question","Response","Theme code"], long:true}
+};
+function exportFile(kind){
+  const cfg = EXPORTS[kind]; let rows = loadAll();
+  if(!rows.length){ alert("No responses saved on this device yet."); return; }
+  if(cfg.filter) rows = rows.filter(cfg.filter);
+  if(cfg.long) rows = rows.flatMap(r=>["E1","E2","E3"].filter(q=>String(r[q]||"").trim())
+                     .map(q=>({ID:r.ID,Group:r.Group,Question:q,Response:r[q],"Theme code":""})));
+  if(cfg.map) rows = rows.map(cfg.map);
+  if(!rows.length){ alert("This file has no rows yet (for example, no sign language respondents)."); return; }
+  const q = v => { v = String(v==null?"":v); return /[",\n\r]/.test(v) ? `"${v.replace(/"/g,'""')}"` : v; };
+  const csv = "\uFEFF" + [cfg.cols.join(","), ...rows.map(r=>cfg.cols.map(c=>q(r[c])).join(","))].join("\r\n");
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
+  a.download = `signbuddy_${cfg.name}_${new Date().toISOString().slice(0,10)}.csv`;
+  document.body.appendChild(a); a.click(); a.remove();
+}
+function nextCode(id){
+  const m = /^(.*?)(\d+)$/.exec(id||""); if(!m) return "";
+  return m[1] + String(Number(m[2])+1).padStart(m[2].length,"0");
+}
+
+/* ===== NAV ===== */
+document.getElementById("nextBtn").onclick = async ()=>{
+  const vs = visible(); const cur = vs[step];
+  if(cur.id==="done"){ S = fresh(nextCode(lastRow && lastRow.ID)); step = 0; render(); return; }
+  if(!validate(cur)) return;
+  if(vs[step+1].id==="done"){
+    const b = document.getElementById("nextBtn"); b.disabled = true; b.textContent = "Submitting…";
+    await submit(); b.disabled = false;
+  }
+  step++; render();
+};
+document.getElementById("backBtn").onclick = ()=>{ if(step>0){ step--; render(); } };
+document.getElementById("langBtn").onclick = e=>{
+  const on = document.body.classList.toggle("en-only");
+  e.currentTarget.textContent = on ? "EN only" : "EN + BM";
+  e.currentTarget.setAttribute("aria-pressed", String(on));
+  render();
+};
+window.addEventListener("beforeunload", e=>{ const cur = visible()[step]; if(cur.id!=="done" && step>0){ e.preventDefault(); e.returnValue=""; } });
+render();
+</script>
+</body>
+</html>
